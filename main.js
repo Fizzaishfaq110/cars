@@ -1,35 +1,40 @@
 "use strict";
 
-const addCarForm = document.querySelector("#addCar");
-const searchCarForm = document.querySelector("#searchCar");
-const cars = [];
+const addCarForm = document.querySelector("#addCar"); //refernce to add car form
+const searchCarForm = document.querySelector("#searchCar"); //refernce to search car form
+const cars = []; // array made to store list of cars
 
+
+// class made for cars
 class Car {
     constructor(license, maker, model, owner, price, color, year) {
         this.license = license;
         this.maker = maker;
         this.model = model;
         this.owner = owner;
-        this.price = parseFloat(price);
+        this.price = parseFloat(price); // parseFloat used because we want price in number form
         this.color = color;
-        this.year = parseInt(year);
+        this.year = parseInt(year);// parseInt used because we want price in number/integer form
     }
 
+    //get function to caculate the age of car
     getCarAge() {
         const currentYear = new Date().getFullYear();
-        return currentYear - this.year;
+        return currentYear - this.year; // subtracts manufacturing year from current year to get car's age
     }
 
+    // used to calulate discount(15% off is given is car is older than 10 years as provided in description of task)
     getDiscountedPrice() {
         return this.getCarAge() > 10 ? this.price * 0.85 : this.price;
     }
-
+    // checks if car is older than 10 years and hence eligible for discount
     isEligibleForDiscount() {
         return this.getCarAge() > 10;
     }
 
 }
 
+// function to display success message made
 const displayMessage = (message, type = "success") => {
     const messageElement = document.querySelector("#message");
     messageElement.textContent = message;
@@ -37,7 +42,7 @@ const displayMessage = (message, type = "success") => {
     setTimeout(() => {
         messageElement.textContent = "";
         messageElement.className = "";
-    }, 3000);
+    }, 3000); // this clears the message after 3 seconds
 };
 
 
@@ -45,80 +50,82 @@ const addCar = (e) => {
     e.preventDefault();
 
     try {
-        const license = document.querySelector("#license").value.trim();
-        const maker = document.querySelector("#maker").value.trim();
+        const license = document.querySelector("#license").value.trim(); //gets the vaule of license plate
+        const maker = document.querySelector("#maker").value.trim(); // trim removes the white spaces 
         const model = document.querySelector("#model").value.trim();
         const owner = document.querySelector("#owner").value.trim();
         const price = parseFloat(document.querySelector("#price").value.trim());
         const color = document.querySelector("#color").value.trim();
         const year = parseInt(document.querySelector("#year").value.trim());
-        const currentYear = new Date().getFullYear();
+        const currentYear = new Date().getFullYear(); //gets the current year
 
         if (!license || !maker || !model || !owner || isNaN(price) || !color || isNaN(year)) {
             throw new Error("All fields are required and must be valid.");
-        }
+        } // if any of these fields is invalid then it throws an error
 
         if (price <= 0) {
             throw new Error("Price must be a positive number.");
-        }
+        } // this will check if the price is a positive number 
 
         if (year < 1886 || year > currentYear) {
             throw new Error(`Year must be between 1886 and ${currentYear}.`);
-        }
+        } // checks if year is between 1886 and current year
 
-        const newCar = new Car(license, maker, model, owner, price, color, year);
-        addCarForm.reset();
-        cars.push(newCar);
+        const newCar = new Car(license, maker, model, owner, price, color, year); // new car object formed
+        addCarForm.reset(); //form fields are reset
+        cars.push(newCar); //newCar is added to array
 
-        localStorage.setItem('cars', JSON.stringify(cars));
+        localStorage.setItem('cars', JSON.stringify(cars)); // cars are stored in the local storage
 
-        displayTable();
-        displayMessage("Car added successfully!");
+        displayTable(); // table now displays new car
+        displayMessage("Car added successfully!"); //shows success message on top
 
     } catch (error) {
-        displayMessage(error.message, "error");
+        displayMessage(error.message, "error"); // this shows error message
     }
 };
 
+// function made to load cars from local storage after refresh
 const loadCarsFromLocalStorage = () => {
-    const storedCars = localStorage.getItem('cars');
+    const storedCars = localStorage.getItem('cars'); // getItem used to get cars from localstorage
     if (storedCars) {
-        const parsedCars = JSON.parse(storedCars);
+        const parsedCars = JSON.parse(storedCars); //JSON string will be converted into array
         parsedCars.forEach(carData => {
-            cars.push(new Car(carData.license, carData.maker, carData.model, carData.owner, carData.price, carData.color, carData.year));
+            cars.push(new Car(carData.license, carData.maker, carData.model, carData.owner, carData.price, carData.color, carData.year)); //for each loop used for cars to add them to array
         });
-        displayTable();
+        displayTable(); // display cars in table
     }
 };
 
+// this function will display cars in table form
 const displayTable = () => {
     const table = document.querySelector("#carsTable");
 
-    table.innerHTML = table.rows[0].innerHTML;
+    table.innerHTML = table.rows[0].innerHTML; // only first row is kept, rest is cleared
 
     cars.forEach((car, index) => {
-        const row = table.insertRow(-1);
+        const row = table.insertRow(-1); // this will insert new row at the end of table
 
         const { license, maker, model, owner, year, color, price } = car;
 
-        const carDetails = [license, maker, model, owner, year, color];
+        const carDetails = [license, maker, model, owner, year, color]; //makes array of car details
 
         carDetails.forEach(detail => {
             row.insertCell(-1).textContent = detail ?? 'N/A';
-        });
+        }); // new cell is inserted for each factor, N/A if it is empty for null
 
-        row.insertCell(-1).textContent = `${price.toFixed(2)}€`;
+        row.insertCell(-1).textContent = `${price.toFixed(2)}€`; // it keeps the price to two decimal points
 
         const discountedPrice = car.isEligibleForDiscount()
-            ? `$${car.getDiscountedPrice().toFixed(2)}`
-            : "No Discount";
-        row.insertCell(-1).textContent = discountedPrice;
+            ? `$${car.getDiscountedPrice().toFixed(2)}` // is discount applies then price is kept to two decimal points
+            : "No Discount"; // no discount if car is not 10 or more years older
+        row.insertCell(-1).textContent = discountedPrice; // this checks if car is eligible for discount
 
-        const deleteButton = document.createElement("button");
-        deleteButton.textContent = "Delete";
-        deleteButton.classList.add("delete");
-        deleteButton.addEventListener("click", () => deleteCar(index));
-        row.insertCell(-1).appendChild(deleteButton);
+        const deleteButton = document.createElement("button"); // creates delete button
+        deleteButton.textContent = "Delete"; //text context of delete button set
+        deleteButton.classList.add("delete"); // class is added for delete
+        deleteButton.addEventListener("click", () => deleteCar(index)); // event listener added which deletes the car when button is clicked
+        row.insertCell(-1).appendChild(deleteButton); // delete button added to new cell in the row
     });
 };
 
@@ -129,17 +136,17 @@ const deleteCar = (index) => {
     displayMessage("Car deleted successfully!");
 };
 
-
+// to search the car function is made
 const searchCar = (e) => {
     e.preventDefault();
     const searchInput = document.querySelector("#search").value.trim();
-    const foundCar = cars.find((car) => car.license.toLowerCase() === searchInput.toLowerCase());
+    const foundCar = cars.find((car) => car.license.toLowerCase() === searchInput.toLowerCase()); // finds the car using license plate
 
     const searchResult = document.querySelector("#searchResult");
 
-    if (foundCar) {
-        const originalPrice = foundCar.price.toFixed(2);
-        const discountedPrice = foundCar.isEligibleForDiscount()
+    if (foundCar) { // incase the car is found
+        const originalPrice = foundCar.price.toFixed(2); // gets the price and displays it to 2 decimal points
+        const discountedPrice = foundCar.isEligibleForDiscount() // checks if car is eligible for discount
             ? `$${foundCar.getDiscountedPrice().toFixed(2)}`
             : "No Discount";
 
@@ -151,14 +158,14 @@ const searchCar = (e) => {
             <p>Original Price: $${originalPrice}</p>
             <p>Discounted Price: ${discountedPrice}</p>
             <p>Color: ${foundCar.color}</p>
-        `;
+        `; // in the search result area, this will display the car's details 
     } else {
-        searchResult.innerHTML = "<p>No car found with the given license plate.</p>";
+        searchResult.innerHTML = "<p>No car found with the given license plate.</p>"; // displayed if no car is found 
     }
 };
 
-addCarForm.addEventListener("submit", addCar);
-searchCarForm.addEventListener("submit", searchCar);
-window.addEventListener('load', loadCarsFromLocalStorage);
+addCarForm.addEventListener("submit", addCar); //event listener added to add car form
+searchCarForm.addEventListener("submit", searchCar); //event listner added to search car form
+window.addEventListener('load', loadCarsFromLocalStorage); // loads saved cars from local storage when page is refreshed or laoded again
 
 
